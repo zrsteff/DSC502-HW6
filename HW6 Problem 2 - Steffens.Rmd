@@ -1,0 +1,112 @@
+---
+title: "HW6"
+author: "Zach Steffens"
+date: "2026-03-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+
+
+load("C:\\Users\\zrsm9\\Downloads\\house_prices.rda")
+
+df_names = ls()
+house = NULL
+for (nm in df_names) {
+  if (is.data.frame(get(nm))) {
+    house = get(nm)
+    break
+  }
+}
+
+names(house)
+
+house = house %>%
+  mutate(
+    date = as.Date(date),
+    year = year(date)   
+  )
+
+p1 = ggplot(house, aes(x = year, y = house_price_index)) +
+  geom_line(color = "steelblue") +
+  facet_wrap(~ state, scales = "free_y") +
+  scale_x_continuous(
+    breaks = c(1980, 2000, 2020),
+    labels = c("'80", "'00", "'20")
+  ) +
+  labs(
+    title = "House Price Index Over Time by State",
+    x = "Year",
+    y = "House Price Index"
+  ) +
+theme_minimal() +
+  theme(
+    strip.text = element_text(size = 4),
+    axis.text.x = element_text(size = 5),
+    axis.text.y = element_text(size = 5),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    legend.text = element_text(size = 6),
+    legend.title = element_text(size = 7)
+  )
+
+print(p1)
+
+#(b) Reshape
+house_reshaped = house %>%
+  gather(
+    key = "measure",
+    value = "value",
+    -state, -date, -year
+  )
+
+head(house_reshaped)
+
+#(c) Two-line plot 
+house_reshaped2 = house_reshaped %>%
+  filter(measure %in% c("house_price_index", "unemploy_perc"))
+
+p2 = ggplot(house_reshaped2, aes(x = year, y = value, color = measure)) +
+  geom_line() +
+  facet_wrap(~ state, scales = "free_y", ncol = 9) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(size = 4),
+    axis.text.x = element_text(size = 5),
+    axis.text.y = element_text(size = 5),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    legend.text = element_text(size = 6),
+    legend.title = element_text(size = 7)
+  ) +
+  scale_x_continuous(
+    breaks = c(1980, 2000, 2020),
+    labels = c("'80", "'00", "'20")
+  ) +
+  scale_color_manual(
+    values = c("house_price_index" = "steelblue",
+               "unemploy_perc" = "firebrick"),
+    labels = c("House Price Index", "Unemployment %")
+  ) +
+  labs(
+    title = "House Price Index and Unemployment % Over Time",
+    x = "Year",
+    y = "Value",
+    color = "Measure"
+  ) 
+
+print(p2)
+```
+Overlaying price index and unemployement percentage on the same y-axis with 
+facet wrap is not a good approach because the measures have different scales/units. 
+This can lead to misleading comparisons or difficulty seeing trends, especially
+given the relatively low value of unemployment percentage. An approach could be to 
+normalize the values so they are equally weighted and then plot them. 
